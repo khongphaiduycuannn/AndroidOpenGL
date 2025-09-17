@@ -1,11 +1,12 @@
 package com.ndmquan.gl.daynight.wallpaper
 
-import android.opengl.GLSurfaceView
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 import com.ndmquan.gl.daynight.wallpaper.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -16,9 +17,15 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(binding.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+        hideSystemBar()
+    }
+
+
+    private fun hideSystemBar() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val controller = WindowInsetsControllerCompat(window, v)
+            controller.hide(WindowInsetsCompat.Type.navigationBars())
+            controller.systemBarsBehavior = BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             insets
         }
     }
