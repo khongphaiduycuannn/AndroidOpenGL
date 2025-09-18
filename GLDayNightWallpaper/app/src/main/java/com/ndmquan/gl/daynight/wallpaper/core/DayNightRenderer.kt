@@ -17,7 +17,11 @@ class DayNightRenderer(
 ) : GLSurfaceView.Renderer {
 
     companion object {
-        const val CLOUD_COUNT = 10
+        const val DEFAULT_DAY_DURATION = 10000L
+
+        const val MIN_CLOUD_DURATION = 25000L
+        const val MAX_CLOUD_DURATION = 40000L
+        const val CLOUD_COUNT = 7
     }
 
 
@@ -31,17 +35,17 @@ class DayNightRenderer(
     private var textureCoordHandle = 0
     private var textureHandle = 0
 
-    private var program = 0
+    private var dayProgram = 0
 
     private var lastFrameTime: Long = 0
 
-    private var dayDuration: Long = 10000
+    private var dayDuration: Long = DEFAULT_DAY_DURATION
     private var dayPosition: Long = 0
     private val animDayProgress
         get() = dayPosition.toFloat() / dayDuration
 
     private var cloudDuration = mutableListOf<Long>().apply {
-        repeat(CLOUD_COUNT) { add((15000..20000).random().toLong()) }
+        repeat(CLOUD_COUNT) { add((MIN_CLOUD_DURATION..MAX_CLOUD_DURATION).random()) }
     }
     private var cloudPosition = mutableListOf<Long>().apply {
         repeat(CLOUD_COUNT) { add(0) }
@@ -61,11 +65,11 @@ class DayNightRenderer(
         GLES20.glEnable(GLES20.GL_BLEND)
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
 
-        program = createShaderProgram()
+        dayProgram = createShaderProgram()
 
-        positionHandle = GLES20.glGetAttribLocation(program, "a_Position")
-        textureCoordHandle = GLES20.glGetAttribLocation(program, "a_TexCoord")
-        textureHandle = GLES20.glGetUniformLocation(program, "u_Texture")
+        positionHandle = GLES20.glGetAttribLocation(dayProgram, "a_Position")
+        textureCoordHandle = GLES20.glGetAttribLocation(dayProgram, "a_TexCoord")
+        textureHandle = GLES20.glGetUniformLocation(dayProgram, "u_Texture")
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -78,7 +82,7 @@ class DayNightRenderer(
 
     override fun onDrawFrame(gl: GL10?) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
-        GLES20.glUseProgram(program)
+        GLES20.glUseProgram(dayProgram)
 
         drawTexture()
 

@@ -2,13 +2,14 @@ package com.ndmquan.gl.daynight.wallpaper.core.textures
 
 import android.content.Context
 import com.ndmquan.gl.daynight.wallpaper.core.base.Base2DTexture
+import com.ndmquan.gl.daynight.wallpaper.core.utils.RandomUtils
 import com.ndmquan.gl.daynight.wallpaper.core.utils.consts.ByteConstants
 
 class CloudTexture(context: Context) : Base2DTexture(context) {
 
-    private val randomScaleRatio = (500..700).random() / 100f
-    private val randomStartXPosition = (-2000..0).random() / 1000f
-    private val randomStartYPosition = -1 + 2f * (600..920).random() / 1000f
+    private val randomScaleRatio = RandomUtils.randomFloat(5f, 7f)
+    private val randomStartXPosition = RandomUtils.randomFloat(-2f, 0f)
+    private val randomStartYPosition = -1 + 2f * RandomUtils.randomFloat(0.6f, 0.92f)
 
 
     override fun getNdcSize(screenWidth: Int, screenHeight: Int): Pair<Float, Float> {
