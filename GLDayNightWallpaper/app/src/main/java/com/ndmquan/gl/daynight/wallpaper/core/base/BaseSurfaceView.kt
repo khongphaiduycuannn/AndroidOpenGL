@@ -9,7 +9,7 @@ abstract class BaseSurfaceView @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : GLSurfaceView(context, attrs) {
 
-    private val renderer: Renderer
+    val renderer: Renderer
 
     abstract fun createRenderer(): Renderer
 

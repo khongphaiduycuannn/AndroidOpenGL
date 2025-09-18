@@ -1,14 +1,13 @@
 package com.ndmquan.gl.daynight.wallpaper.core
 
 import android.content.Context
-import android.graphics.BitmapFactory
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
-import android.opengl.GLUtils
 import com.ndmquan.gl.daynight.wallpaper.R
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.FloatBuffer
+import com.ndmquan.gl.daynight.wallpaper.core.textures.MoonTexture
+import com.ndmquan.gl.daynight.wallpaper.core.textures.SunTexture
+import com.ndmquan.gl.daynight.wallpaper.core.utils.GLLoader
+import com.ndmquan.gl.daynight.wallpaper.core.utils.consts.ShaderPatterns
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -16,39 +15,28 @@ class DayNightRenderer(
     private val context: Context
 ) : GLSurfaceView.Renderer {
 
-    private var screenWidth = 0
-    private var screenHeight = 0
-
-    private var program = 0
-    private var textureId1 = 0  // Bottom-left texture
-    private var textureId2 = 0  // Top-right texture
-    private var buffer1: FloatBuffer? = null  // Bottom-left buffer
-    private var buffer2: FloatBuffer? = null  // Top-right buffer
-
     private var positionHandle = 0
     private var textureCoordHandle = 0
     private var textureHandle = 0
 
-    val vertexShader = """
-        attribute vec4 a_Position;
-        attribute vec2 a_TexCoord;
-        varying vec2 v_TexCoord;
-        
-        void main() {
-            gl_Position = a_Position;
-            v_TexCoord = a_TexCoord;
-        }
-    """.trimIndent()
+    private var program = 0
 
-    val fragmentShader = """
-        precision mediump float;
-        uniform sampler2D u_Texture;
-        varying vec2 v_TexCoord;
-        
-        void main() {
-            gl_FragColor = texture2D(u_Texture, v_TexCoord);
-        }
-    """.trimIndent()
+    private var screenWidth = 0
+    private var screenHeight = 0
+
+    private var duration: Long = 5000
+    private var position: Long = 0
+    private var lastFrameTime: Long = 0
+    private var isPlaying = true
+    private var loop = true
+
+    private val animProgress get() = position.toFloat() / duration
+
+
+    private val sunTexture = SunTexture(context)
+
+    private val moonTexture = MoonTexture(context)
+
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
@@ -56,9 +44,6 @@ class DayNightRenderer(
         GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
 
         program = createShaderProgram()
-        textureId1 = loadTexture(R.drawable.img_sun)
-        textureId2 = loadTexture(R.drawable.img_sun) // Có thể thay bằng texture khác
-        setupBuffers()
 
         positionHandle = GLES20.glGetAttribLocation(program, "a_Position")
         textureCoordHandle = GLES20.glGetAttribLocation(program, "a_TexCoord")
@@ -69,44 +54,37 @@ class DayNightRenderer(
         screenWidth = width
         screenHeight = height
         GLES20.glViewport(0, 0, width, height)
-        setupBuffers()
+
+        initTexture()
     }
 
     override fun onDrawFrame(gl: GL10?) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT)
         GLES20.glUseProgram(program)
 
-        val stride = 5 * 4
+        drawTexture()
 
-        // Draw first texture (bottom-left)
-        drawTexture(textureId1, buffer1, stride)
-
-        // Draw second texture (top-right)
-        drawTexture(textureId2, buffer2, stride)
+        val deltaTime = System.currentTimeMillis() - lastFrameTime
+        if (deltaTime < 30) {
+            position += deltaTime
+            when {
+                loop && position >= duration -> position = 0
+                !loop && position >= duration -> isPlaying = false
+            }
+        }
+        if (isPlaying) {
+            lastFrameTime = System.currentTimeMillis()
+        }
     }
 
-    private fun drawTexture(textureId: Int, buffer: FloatBuffer?, stride: Int) {
-        buffer?.position(0)
-        GLES20.glEnableVertexAttribArray(positionHandle)
-        GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, stride, buffer)
-
-        buffer?.position(3)
-        GLES20.glEnableVertexAttribArray(textureCoordHandle)
-        GLES20.glVertexAttribPointer(textureCoordHandle, 2, GLES20.GL_FLOAT, false, stride, buffer)
-
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
-        GLES20.glUniform1i(textureHandle, 0)
-
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
-
-        GLES20.glDisableVertexAttribArray(positionHandle)
-        GLES20.glDisableVertexAttribArray(textureCoordHandle)
-    }
 
     private fun createShaderProgram(): Int {
-        val vertexShaderId = loadShader(GLES20.GL_VERTEX_SHADER, vertexShader)
-        val fragmentShaderId = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentShader)
+        val vertexShaderId = GLLoader.loadShader(
+            GLES20.GL_VERTEX_SHADER, ShaderPatterns.Texture2D.vertex
+        )
+        val fragmentShaderId = GLLoader.loadShader(
+            GLES20.GL_FRAGMENT_SHADER, ShaderPatterns.Texture2D.fragment
+        )
 
         val program = GLES20.glCreateProgram()
         GLES20.glAttachShader(program, vertexShaderId)
@@ -116,66 +94,40 @@ class DayNightRenderer(
         return program
     }
 
-    private fun loadShader(type: Int, shaderCode: String): Int {
-        val shader = GLES20.glCreateShader(type)
-        GLES20.glShaderSource(shader, shaderCode)
-        GLES20.glCompileShader(shader)
-        return shader
+
+    private fun initTexture() {
+        sunTexture.init(R.drawable.img_sun, screenWidth, screenHeight)
+        moonTexture.init(R.drawable.img_moon, screenWidth, screenHeight)
     }
 
-    private fun loadTexture(resourceId: Int): Int {
-        val textureIds = IntArray(1)
-        GLES20.glGenTextures(1, textureIds, 0)
+    private fun drawTexture() {
+        sunTexture.animProgress = animProgress
+        sunTexture.drawTexture(positionHandle, textureCoordHandle, textureHandle)
 
-        val bitmap = BitmapFactory.decodeResource(context.resources, resourceId)
-
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureIds[0])
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
-
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0)
-        bitmap.recycle()
-
-        return textureIds[0]
+        moonTexture.animProgress = animProgress
+        moonTexture.drawTexture(positionHandle, textureCoordHandle, textureHandle)
     }
 
-    private fun setupBuffers() {
-        val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.img_sun)
-        val textureWidth = bitmap.width
-        val textureHeight = bitmap.height
-        bitmap.recycle()
 
-        val ndcWidth = (textureWidth.toFloat() / screenWidth) * 2f
-        val ndcHeight = (textureHeight.toFloat() / screenHeight) * 2f
+    fun getDuration(): Long = this.duration
 
-        // Bottom-left texture data
-        val data1 = floatArrayOf(
-            -1.0f, -1.0f, 0f, 0f, 1f,
-            -1.0f + ndcWidth * 0.2f, -1.0f, 0f, 1f, 1f,
-            -1.0f, -1.0f + ndcHeight * 0.2f, 0f, 0f, 0f,
-            -1.0f + ndcWidth * 0.2f, -1.0f + ndcHeight * 0.2f, 0f, 1f, 0f
-        )
+    fun isPlaying(): Boolean = this.isPlaying
 
-        // Top-right texture data
-        val data2 = floatArrayOf(
-            1.0f - ndcWidth * 0.2f, 1.0f - ndcHeight * 0.2f, 0f, 0f, 1f,
-            1.0f, 1.0f - ndcHeight * 0.2f, 0f, 1f, 1f,
-            1.0f - ndcWidth * 0.2f, 1.0f, 0f, 0f, 0f,
-            1.0f, 1.0f, 0f, 1f, 0f
-        )
+    fun isLoop(): Boolean = this.loop
 
-        buffer1 = ByteBuffer.allocateDirect(data1.size * 4)
-            .order(ByteOrder.nativeOrder())
-            .asFloatBuffer()
-            .put(data1)
-            .apply { position(0) }
+    fun setDuration(duration: Long) {
+        this.duration = duration
+    }
 
-        buffer2 = ByteBuffer.allocateDirect(data2.size * 4)
-            .order(ByteOrder.nativeOrder())
-            .asFloatBuffer()
-            .put(data2)
-            .apply { position(0) }
+    fun play() {
+        this.isPlaying = true
+    }
+
+    fun pause() {
+        this.isPlaying = false
+    }
+
+    fun setLoop(loop: Boolean) {
+        this.loop = loop
     }
 }
