@@ -4,8 +4,8 @@ import android.content.Context
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import com.ndmquan.gl.daynight.wallpaper.R
-import com.ndmquan.gl.daynight.wallpaper.core.textures.BackgroundSkyDayTexture
-import com.ndmquan.gl.daynight.wallpaper.core.textures.BackgroundSkyNightTexture
+import com.ndmquan.gl.daynight.wallpaper.core.textures.LayerDayTexture
+import com.ndmquan.gl.daynight.wallpaper.core.textures.LayerNightTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.CloudTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.MoonTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.SunTexture
@@ -57,10 +57,10 @@ class DayNightRenderer(
     private val cloudTextures = mutableListOf<CloudTexture>()
         .apply { repeat(CLOUD_COUNT) { add(CloudTexture(context)) } }
 
-    private val backgroundSkyDayTexture = BackgroundSkyDayTexture(context)
-    private val backgroundSkyNightTexture = BackgroundSkyNightTexture(context)
-    private val foregroundDayTexture = BackgroundSkyDayTexture(context)
-    private val foregroundNightTexture = BackgroundSkyNightTexture(context)
+    private val layerDayTexture = LayerDayTexture(context)
+    private val layerNightTexture = LayerNightTexture(context)
+    private val foregroundDayTexture = LayerDayTexture(context)
+    private val foregroundNightTexture = LayerNightTexture(context)
 
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
@@ -142,20 +142,20 @@ class DayNightRenderer(
         foregroundNightTexture.init(
             dayProgram, R.drawable.img_foreground_night, screenWidth, screenHeight
         )
-        backgroundSkyDayTexture.init(
+        layerDayTexture.init(
             dayProgram, R.drawable.img_sky_bright, screenWidth, screenHeight
         )
-        backgroundSkyNightTexture.init(
+        layerNightTexture.init(
             dayProgram, R.drawable.img_sky_night, screenWidth, screenHeight
         )
     }
 
     private fun drawTexture() {
-        backgroundSkyNightTexture.animProgress = animDayProgress
-        backgroundSkyNightTexture.drawTexture(dayProgram)
+        layerNightTexture.animProgress = animDayProgress
+        layerNightTexture.drawTexture(dayProgram)
 
-        backgroundSkyDayTexture.animProgress = animDayProgress
-        backgroundSkyDayTexture.drawTexture(dayProgram)
+        layerDayTexture.animProgress = animDayProgress
+        layerDayTexture.drawTexture(dayProgram)
 
         foregroundNightTexture.animProgress = animDayProgress
         foregroundNightTexture.drawTexture(dayProgram)

@@ -2,7 +2,7 @@ package com.ndmquan.gl.daynight.wallpaper.core.textures
 
 import android.content.Context
 
-class BackgroundSkyDayTexture(context: Context) : BackgroundSkyTexture(context) {
+class LayerDayTexture(context: Context) : LayerTexture(context) {
 
     override fun getAlpha(): Float {
         return when {

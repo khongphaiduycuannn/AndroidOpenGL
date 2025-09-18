@@ -5,7 +5,7 @@ import android.opengl.GLES20
 import com.ndmquan.gl.daynight.wallpaper.core.base.Base2DTexture
 import com.ndmquan.gl.daynight.wallpaper.core.utils.consts.ByteConstants
 
-abstract class BackgroundSkyTexture(context: Context) : Base2DTexture(context) {
+abstract class LayerTexture(context: Context) : Base2DTexture(context) {
 
     override fun getNdcSize(
         screenWidth: Int,
