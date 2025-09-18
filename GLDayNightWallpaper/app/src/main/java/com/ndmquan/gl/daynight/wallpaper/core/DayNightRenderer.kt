@@ -4,9 +4,9 @@ import android.content.Context
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import com.ndmquan.gl.daynight.wallpaper.R
+import com.ndmquan.gl.daynight.wallpaper.core.textures.CloudTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.LayerDayTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.LayerNightTexture
-import com.ndmquan.gl.daynight.wallpaper.core.textures.CloudTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.MoonTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.SunTexture
 import com.ndmquan.gl.daynight.wallpaper.core.utils.GLLoader
@@ -72,11 +72,14 @@ class DayNightRenderer(
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
+        val sizeChanged = screenWidth != width || screenHeight != height
         screenWidth = width
         screenHeight = height
         GLES20.glViewport(0, 0, width, height)
 
-        initTexture()
+        if (sizeChanged) {
+            initTexture()
+        }
     }
 
     override fun onDrawFrame(gl: GL10?) {
@@ -122,7 +125,6 @@ class DayNightRenderer(
 
         return program
     }
-
 
     private fun initTexture() {
         sunTexture.init(
