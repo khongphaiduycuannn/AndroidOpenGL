@@ -4,13 +4,15 @@ import android.content.Context
 import com.ndmquan.gl.daynight.wallpaper.core.base.Base2DTexture
 import com.ndmquan.gl.daynight.wallpaper.core.utils.consts.ByteConstants
 
-class MoonTexture(context: Context) : Base2DTexture(context) {
+class CloudTexture(context: Context) : Base2DTexture(context) {
 
-    override fun getNdcSize(
-        screenWidth: Int,
-        screenHeight: Int
-    ): Pair<Float, Float> {
-        val widthInPixels = screenWidth / 4f
+    private val randomScaleRatio = (500..700).random() / 100f
+    private val randomStartXPosition = (-2000..0).random() / 1000f
+    private val randomStartYPosition = -1 + 2f * (600..920).random() / 1000f
+
+
+    override fun getNdcSize(screenWidth: Int, screenHeight: Int): Pair<Float, Float> {
+        val widthInPixels = screenWidth / randomScaleRatio
         val heightInPixels = widthInPixels * textureHeight / textureWidth
 
         val ndcWidth = (widthInPixels / screenWidth) * 2f
@@ -28,25 +30,17 @@ class MoonTexture(context: Context) : Base2DTexture(context) {
     }
 
     override fun getAnimFloatArray(progress: Float, ndcWidth: Float, ndcHeight: Float): FloatArray {
-        if (progress <= 0.5f) {
-            return getInitialFloatArray(ndcWidth, ndcHeight)
-        }
-
-        val progress = (progress - 0.5f) * 2
-
-        val totalMoveDistance = 2 + ndcWidth
+        val totalMoveDistance = 4
         val currentMoveDistance = totalMoveDistance * progress
-        val currentX = -1.0f + currentMoveDistance - ndcWidth
 
-        val parabolHeight = -1f * (progress - 0.5f) * (progress - 0.5f) + 0.25f
-        val maxParabolHeight = 1.2f
-        val currentY = 0.35f + parabolHeight * maxParabolHeight
+        val currentX = -1.0f + currentMoveDistance - ndcWidth
+        val currentY = randomStartYPosition
 
         return floatArrayOf(
-            currentX, currentY, 0f, 0f, 1f,
-            currentX + ndcWidth, currentY, 0f, 1f, 1f,
-            currentX, currentY + ndcHeight, 0f, 0f, 0f,
-            currentX + ndcWidth, currentY + ndcHeight, 0f, 1f, 0f
+            currentX + randomStartXPosition, currentY, 0f, 0f, 1f,
+            currentX + randomStartXPosition + ndcWidth, currentY, 0f, 1f, 1f,
+            currentX + randomStartXPosition, currentY + ndcHeight, 0f, 0f, 0f,
+            currentX + randomStartXPosition + ndcWidth, currentY + ndcHeight, 0f, 1f, 0f
         )
     }
 

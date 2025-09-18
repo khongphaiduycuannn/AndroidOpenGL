@@ -4,6 +4,7 @@ import android.content.Context
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import com.ndmquan.gl.daynight.wallpaper.R
+import com.ndmquan.gl.daynight.wallpaper.core.textures.CloudTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.MoonTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.SunTexture
 import com.ndmquan.gl.daynight.wallpaper.core.utils.GLLoader
@@ -15,27 +16,44 @@ class DayNightRenderer(
     private val context: Context
 ) : GLSurfaceView.Renderer {
 
+    companion object {
+        const val CLOUD_COUNT = 10
+    }
+
+
+    private var screenWidth = 0
+    private var screenHeight = 0
+
+    private var isPlaying = true
+    private var loop = true
+
     private var positionHandle = 0
     private var textureCoordHandle = 0
     private var textureHandle = 0
 
     private var program = 0
 
-    private var screenWidth = 0
-    private var screenHeight = 0
-
-    private var duration: Long = 5000
-    private var position: Long = 0
     private var lastFrameTime: Long = 0
-    private var isPlaying = true
-    private var loop = true
 
-    private val animProgress get() = position.toFloat() / duration
+    private var dayDuration: Long = 10000
+    private var dayPosition: Long = 0
+    private val animDayProgress
+        get() = dayPosition.toFloat() / dayDuration
+
+    private var cloudDuration = mutableListOf<Long>().apply {
+        repeat(CLOUD_COUNT) { add((15000..20000).random().toLong()) }
+    }
+    private var cloudPosition = mutableListOf<Long>().apply {
+        repeat(CLOUD_COUNT) { add(0) }
+    }
+    private val animCloudProgress
+        get() = cloudPosition.mapIndexed { index, value -> value.toFloat() / cloudDuration[index] }
 
 
     private val sunTexture = SunTexture(context)
-
     private val moonTexture = MoonTexture(context)
+    private val cloudTextures = mutableListOf<CloudTexture>()
+        .apply { repeat(CLOUD_COUNT) { add(CloudTexture(context)) } }
 
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
@@ -66,10 +84,18 @@ class DayNightRenderer(
 
         val deltaTime = System.currentTimeMillis() - lastFrameTime
         if (deltaTime < 30) {
-            position += deltaTime
+            dayPosition += deltaTime
+            cloudPosition.forEachIndexed { index, value ->
+                cloudPosition[index] = value + deltaTime
+            }
             when {
-                loop && position >= duration -> position = 0
-                !loop && position >= duration -> isPlaying = false
+                loop && dayPosition >= dayDuration -> dayPosition = 0
+                !loop && dayPosition >= dayDuration -> isPlaying = false
+            }
+            if (loop) {
+                cloudPosition.forEachIndexed { index, it ->
+                    if (it > cloudDuration[index]) cloudPosition[index] = 0
+                }
             }
         }
         if (isPlaying) {
@@ -98,25 +124,31 @@ class DayNightRenderer(
     private fun initTexture() {
         sunTexture.init(R.drawable.img_sun, screenWidth, screenHeight)
         moonTexture.init(R.drawable.img_moon, screenWidth, screenHeight)
+        cloudTextures.forEach { it.init(R.drawable.img_cloud, screenWidth, screenHeight) }
     }
 
     private fun drawTexture() {
-        sunTexture.animProgress = animProgress
+        sunTexture.animProgress = animDayProgress
         sunTexture.drawTexture(positionHandle, textureCoordHandle, textureHandle)
 
-        moonTexture.animProgress = animProgress
+        moonTexture.animProgress = animDayProgress
         moonTexture.drawTexture(positionHandle, textureCoordHandle, textureHandle)
+
+        cloudTextures.forEachIndexed { index, it ->
+            it.animProgress = animCloudProgress[index]
+            it.drawTexture(positionHandle, textureCoordHandle, textureHandle)
+        }
     }
 
 
-    fun getDuration(): Long = this.duration
+    fun getDuration(): Long = this.dayDuration
 
     fun isPlaying(): Boolean = this.isPlaying
 
     fun isLoop(): Boolean = this.loop
 
     fun setDuration(duration: Long) {
-        this.duration = duration
+        this.dayDuration = duration
     }
 
     fun play() {
