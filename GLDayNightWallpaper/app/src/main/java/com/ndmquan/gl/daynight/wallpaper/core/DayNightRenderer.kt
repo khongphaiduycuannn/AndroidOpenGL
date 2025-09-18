@@ -4,6 +4,8 @@ import android.content.Context
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import com.ndmquan.gl.daynight.wallpaper.R
+import com.ndmquan.gl.daynight.wallpaper.core.textures.BackgroundSkyDayTexture
+import com.ndmquan.gl.daynight.wallpaper.core.textures.BackgroundSkyNightTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.CloudTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.MoonTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.SunTexture
@@ -17,7 +19,7 @@ class DayNightRenderer(
 ) : GLSurfaceView.Renderer {
 
     companion object {
-        const val DEFAULT_DAY_DURATION = 10000L
+        const val DEFAULT_DAY_DURATION = 5000L
 
         const val MIN_CLOUD_DURATION = 25000L
         const val MAX_CLOUD_DURATION = 40000L
@@ -30,10 +32,6 @@ class DayNightRenderer(
 
     private var isPlaying = true
     private var loop = true
-
-    private var positionHandle = 0
-    private var textureCoordHandle = 0
-    private var textureHandle = 0
 
     private var dayProgram = 0
 
@@ -59,17 +57,18 @@ class DayNightRenderer(
     private val cloudTextures = mutableListOf<CloudTexture>()
         .apply { repeat(CLOUD_COUNT) { add(CloudTexture(context)) } }
 
+    private val backgroundSkyDayTexture = BackgroundSkyDayTexture(context)
+    private val backgroundSkyNightTexture = BackgroundSkyNightTexture(context)
+    private val foregroundDayTexture = BackgroundSkyDayTexture(context)
+    private val foregroundNightTexture = BackgroundSkyNightTexture(context)
+
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
         GLES20.glEnable(GLES20.GL_BLEND)
-        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA)
+        GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA)
 
         dayProgram = createShaderProgram()
-
-        positionHandle = GLES20.glGetAttribLocation(dayProgram, "a_Position")
-        textureCoordHandle = GLES20.glGetAttribLocation(dayProgram, "a_TexCoord")
-        textureHandle = GLES20.glGetUniformLocation(dayProgram, "u_Texture")
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -87,7 +86,7 @@ class DayNightRenderer(
         drawTexture()
 
         val deltaTime = System.currentTimeMillis() - lastFrameTime
-        if (deltaTime < 30) {
+        if (deltaTime < 200) {
             dayPosition += deltaTime
             cloudPosition.forEachIndexed { index, value ->
                 cloudPosition[index] = value + deltaTime
@@ -126,21 +125,53 @@ class DayNightRenderer(
 
 
     private fun initTexture() {
-        sunTexture.init(R.drawable.img_sun, screenWidth, screenHeight)
-        moonTexture.init(R.drawable.img_moon, screenWidth, screenHeight)
-        cloudTextures.forEach { it.init(R.drawable.img_cloud, screenWidth, screenHeight) }
+        sunTexture.init(
+            dayProgram, R.drawable.img_sun, screenWidth, screenHeight
+        )
+        moonTexture.init(
+            dayProgram, R.drawable.img_moon, screenWidth, screenHeight
+        )
+        cloudTextures.forEach {
+            it.init(
+                dayProgram, R.drawable.img_cloud, screenWidth, screenHeight
+            )
+        }
+        foregroundDayTexture.init(
+            dayProgram, R.drawable.img_foreground_bright, screenWidth, screenHeight
+        )
+        foregroundNightTexture.init(
+            dayProgram, R.drawable.img_foreground_night, screenWidth, screenHeight
+        )
+        backgroundSkyDayTexture.init(
+            dayProgram, R.drawable.img_sky_bright, screenWidth, screenHeight
+        )
+        backgroundSkyNightTexture.init(
+            dayProgram, R.drawable.img_sky_night, screenWidth, screenHeight
+        )
     }
 
     private fun drawTexture() {
+        backgroundSkyNightTexture.animProgress = animDayProgress
+        backgroundSkyNightTexture.drawTexture(dayProgram)
+
+        backgroundSkyDayTexture.animProgress = animDayProgress
+        backgroundSkyDayTexture.drawTexture(dayProgram)
+
+        foregroundNightTexture.animProgress = animDayProgress
+        foregroundNightTexture.drawTexture(dayProgram)
+
+        foregroundDayTexture.animProgress = animDayProgress
+        foregroundDayTexture.drawTexture(dayProgram)
+
         sunTexture.animProgress = animDayProgress
-        sunTexture.drawTexture(positionHandle, textureCoordHandle, textureHandle)
+        sunTexture.drawTexture(dayProgram)
 
         moonTexture.animProgress = animDayProgress
-        moonTexture.drawTexture(positionHandle, textureCoordHandle, textureHandle)
+        moonTexture.drawTexture(dayProgram)
 
         cloudTextures.forEachIndexed { index, it ->
             it.animProgress = animCloudProgress[index]
-            it.drawTexture(positionHandle, textureCoordHandle, textureHandle)
+            it.drawTexture(dayProgram)
         }
     }
 

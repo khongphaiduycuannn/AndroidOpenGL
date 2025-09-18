@@ -9,7 +9,7 @@ class CloudTexture(context: Context) : Base2DTexture(context) {
 
     private val randomScaleRatio = RandomUtils.randomFloat(5f, 7f)
     private val randomStartXPosition = RandomUtils.randomFloat(-2f, 0f)
-    private val randomStartYPosition = -1 + 2f * RandomUtils.randomFloat(0.6f, 0.92f)
+    private val randomStartYPosition = -1 + 2f * RandomUtils.randomFloat(0.7f, 0.92f)
 
 
     override fun getNdcSize(screenWidth: Int, screenHeight: Int): Pair<Float, Float> {

@@ -15,6 +15,11 @@ abstract class Base2DTexture(
 ) {
     protected var textureId: Int = 0
 
+    protected var positionHandle: Int = 0
+    protected var textureCoordHandle: Int = 0
+    protected var textureHandle: Int = 0
+    protected var alphaHandle: Int = 0
+
     protected var buffer: FloatBuffer? = null
 
     protected var screenWidth: Int = 0
@@ -24,10 +29,12 @@ abstract class Base2DTexture(
     protected var ndcWidth: Float = 0f
     protected var ndcHeight: Float = 0f
 
+
+    private var lastAnimProgress: Float = -1f
     var animProgress: Float = 0f
 
     fun init(
-        resourceId: Int, screenWidth: Int, screenHeight: Int
+        program: Int, resourceId: Int, screenWidth: Int, screenHeight: Int
     ) {
         textureId = GLLoader.loadTexture(context, resourceId)
         this.screenWidth = screenWidth
@@ -48,6 +55,8 @@ abstract class Base2DTexture(
             .asFloatBuffer()
             .put(data)
             .apply { position(0) }
+
+        cacheHandles(program)
     }
 
     abstract fun getNdcSize(screenWidth: Int, screenHeight: Int): Pair<Float, Float>
@@ -57,25 +66,23 @@ abstract class Base2DTexture(
     }
     abstract fun getStrike(): Int
 
-    open fun onDrawTexture(positionHandle: Int, textureCoordHandle: Int, textureHandle: Int) {
+    open fun onDrawTexture(program: Int) {
         buffer?.position(0)
         GLES20.glEnableVertexAttribArray(positionHandle)
-        GLES20.glVertexAttribPointer(positionHandle, 3, GLES20.GL_FLOAT, false, getStrike(), buffer)
+        GLES20.glVertexAttribPointer(
+            positionHandle, 3, GLES20.GL_FLOAT, false, getStrike(), buffer
+        )
 
         buffer?.position(3)
         GLES20.glEnableVertexAttribArray(textureCoordHandle)
         GLES20.glVertexAttribPointer(
-            textureCoordHandle,
-            2,
-            GLES20.GL_FLOAT,
-            false,
-            getStrike(),
-            buffer
+            textureCoordHandle, 2, GLES20.GL_FLOAT, false, getStrike(), buffer
         )
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
         GLES20.glUniform1i(textureHandle, 0)
+        GLES20.glUniform1f(alphaHandle, 1f)
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
 
@@ -83,11 +90,25 @@ abstract class Base2DTexture(
         GLES20.glDisableVertexAttribArray(textureCoordHandle)
     }
 
-    fun drawTexture(positionHandle: Int, textureCoordHandle: Int, textureHandle: Int) {
-        if (animProgress != 0f) {
+    fun drawTexture(program: Int) {
+        if (animProgress != 0f && shouldUpdateBuffer()) {
             val data = getAnimFloatArray(animProgress, ndcWidth, ndcHeight)
-            buffer = buffer?.updateBuffer(data)
+            buffer?.updateBuffer(data)
         }
-        onDrawTexture(positionHandle, textureCoordHandle, textureHandle)
+        onDrawTexture(program)
+    }
+
+
+    private fun shouldUpdateBuffer(): Boolean {
+        val shouldUpdate = lastAnimProgress != animProgress
+        lastAnimProgress = animProgress
+        return shouldUpdate
+    }
+
+    private fun cacheHandles(program: Int) {
+        positionHandle = GLES20.glGetAttribLocation(program, "a_Position")
+        textureCoordHandle = GLES20.glGetAttribLocation(program, "a_TexCoord")
+        textureHandle = GLES20.glGetUniformLocation(program, "u_Texture")
+        alphaHandle = GLES20.glGetUniformLocation(program, "u_Alpha")
     }
 }

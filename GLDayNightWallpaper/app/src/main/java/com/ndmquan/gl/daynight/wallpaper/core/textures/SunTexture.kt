@@ -10,7 +10,7 @@ class SunTexture(context: Context) : Base2DTexture(context) {
         screenWidth: Int,
         screenHeight: Int
     ): Pair<Float, Float> {
-        val widthInPixels = screenWidth / 4f
+        val widthInPixels = screenWidth / 2f
         val heightInPixels = widthInPixels * textureHeight / textureWidth
 
         val ndcWidth = (widthInPixels / screenWidth) * 2f
@@ -40,7 +40,7 @@ class SunTexture(context: Context) : Base2DTexture(context) {
 
         val parabolHeight = -1f * (progress - 0.5f) * (progress - 0.5f) + 0.25f
         val maxParabolHeight = 1.2f
-        val currentY = 0.35f + parabolHeight * maxParabolHeight
+        val currentY = 0.25f + parabolHeight * maxParabolHeight
 
         return floatArrayOf(
             currentX, currentY, 0f, 0f, 1f,

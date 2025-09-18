@@ -19,9 +19,10 @@ object ShaderPatterns {
             precision mediump float;
             uniform sampler2D u_Texture;
             varying vec2 v_TexCoord;
+            uniform float u_Alpha;
             
             void main() {
-                gl_FragColor = texture2D(u_Texture, v_TexCoord);
+                gl_FragColor = texture2D(u_Texture, v_TexCoord) * u_Alpha;
             }
         """.trimIndent()
     }
