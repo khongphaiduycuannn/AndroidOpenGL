@@ -5,6 +5,7 @@ import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import com.ndmquan.gl.daynight.wallpaper.R
 import com.ndmquan.gl.daynight.wallpaper.core.textures.CloudTexture
+import com.ndmquan.gl.daynight.wallpaper.core.textures.ColorFilterTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.LayerDayTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.LayerNightTexture
 import com.ndmquan.gl.daynight.wallpaper.core.textures.MoonTexture
@@ -19,10 +20,10 @@ class DayNightRenderer(
 ) : GLSurfaceView.Renderer {
 
     companion object {
-        const val DEFAULT_DAY_DURATION = 5000L
+        const val DEFAULT_DAY_DURATION = 5 * 60_000L
 
-        const val MIN_CLOUD_DURATION = 25000L
-        const val MAX_CLOUD_DURATION = 40000L
+        const val MIN_CLOUD_DURATION = 35_000L
+        const val MAX_CLOUD_DURATION = 60_000L
         const val CLOUD_COUNT = 7
     }
 
@@ -61,6 +62,7 @@ class DayNightRenderer(
     private val layerNightTexture = LayerNightTexture(context)
     private val foregroundDayTexture = LayerDayTexture(context)
     private val foregroundNightTexture = LayerNightTexture(context)
+    private val colorFilterTexture = ColorFilterTexture(context)
 
 
     override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
@@ -150,6 +152,9 @@ class DayNightRenderer(
         layerNightTexture.init(
             dayProgram, R.drawable.img_sky_night, screenWidth, screenHeight
         )
+        colorFilterTexture.init(
+            dayProgram, screenWidth, screenHeight
+        )
     }
 
     private fun drawTexture() {
@@ -175,6 +180,9 @@ class DayNightRenderer(
             it.animProgress = animCloudProgress[index]
             it.drawTexture(dayProgram)
         }
+
+        colorFilterTexture.animProgress = animDayProgress
+        colorFilterTexture.drawTexture(dayProgram)
     }
 
 

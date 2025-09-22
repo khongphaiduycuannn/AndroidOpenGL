@@ -1,14 +1,30 @@
 package com.ndmquan.gl.daynight.wallpaper.core.textures
 
 import android.content.Context
+import com.ndmquan.gl.daynight.wallpaper.core.utils.DayTimeMapper
 
 class LayerDayTexture(context: Context) : LayerTexture(context) {
 
     override fun getAlpha(): Float {
+        val sunRise = DayTimeMapper.getSunRiseProgress(animProgress)
+        val sunSet = DayTimeMapper.getSunSetProgress(animProgress)
         return when {
-            0f <= animProgress && animProgress <= 0.2 -> animProgress * 5
-            0.2 < animProgress && animProgress < 0.6 -> 1f
-            0.6 <= animProgress && animProgress <= 0.8 -> 1f - (animProgress - 0.6f) * 5
+            DayTimeMapper.isSunRise(animProgress) ->
+                DayTimeMapper.getProgressDiff(
+                    animProgress, sunRise.first
+                ) / DayTimeMapper.getProgressDiff(
+                    sunRise.second, sunRise.first
+                )
+
+            sunRise.second < animProgress && animProgress < sunSet.first -> 1f
+
+            DayTimeMapper.isSunSet(animProgress) ->
+                1f - DayTimeMapper.getProgressDiff(
+                    animProgress, sunSet.first
+                ) / DayTimeMapper.getProgressDiff(
+                    sunSet.second, sunSet.first
+                )
+
             else -> 0f
         }
     }

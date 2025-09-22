@@ -2,6 +2,7 @@ package com.ndmquan.gl.daynight.wallpaper.core.textures
 
 import android.content.Context
 import com.ndmquan.gl.daynight.wallpaper.core.base.Base2DTexture
+import com.ndmquan.gl.daynight.wallpaper.core.utils.DayTimeMapper
 import com.ndmquan.gl.daynight.wallpaper.core.utils.consts.ByteConstants
 
 class SunTexture(context: Context) : Base2DTexture(context) {
@@ -28,7 +29,7 @@ class SunTexture(context: Context) : Base2DTexture(context) {
     }
 
     override fun getAnimFloatArray(progress: Float, ndcWidth: Float, ndcHeight: Float): FloatArray {
-        if (progress > 0.5f) {
+        if (progress > DayTimeMapper.getDayEndProgress()) {
             return getInitialFloatArray(ndcWidth, ndcHeight)
         }
 

@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.opengl.GLES20
 import com.ndmquan.gl.daynight.wallpaper.core.utils.GLLoader
+import com.ndmquan.gl.daynight.wallpaper.core.utils.GLLoader.createEmptyTexture
 import com.ndmquan.gl.daynight.wallpaper.core.utils.consts.ByteConstants
 import com.ndmquan.gl.daynight.wallpaper.core.utils.extensions.updateBuffer
 import java.nio.ByteBuffer
@@ -33,17 +34,30 @@ abstract class Base2DTexture(
     private var lastAnimProgress: Float = -1f
     var animProgress: Float = 0f
 
-    fun init(
-        program: Int, resourceId: Int, screenWidth: Int, screenHeight: Int
-    ) {
-        textureId = GLLoader.loadTexture(context, resourceId)
-        this.screenWidth = screenWidth
-        this.screenHeight = screenHeight
+
+    fun init(program: Int, resourceId: Int, screenWidth: Int, screenHeight: Int) {
+        textureId = GLLoader.createResourceTexture(context, resourceId)
 
         val bitmap = BitmapFactory.decodeResource(context.resources, resourceId)
         textureWidth = bitmap.width.toFloat()
         textureHeight = bitmap.height.toFloat()
         bitmap.recycle()
+
+        initCommon(program, screenWidth, screenHeight)
+    }
+
+    fun init(program: Int, screenWidth: Int, screenHeight: Int) {
+        textureId = createEmptyTexture()
+        textureWidth = screenWidth.toFloat()
+        textureHeight = screenHeight.toFloat()
+
+        initCommon(program, screenWidth, screenHeight)
+    }
+
+
+    private fun initCommon(program: Int, screenWidth: Int, screenHeight: Int) {
+        this.screenWidth = screenWidth
+        this.screenHeight = screenHeight
 
         val size = getNdcSize(screenWidth, screenHeight)
         ndcWidth = size.first
