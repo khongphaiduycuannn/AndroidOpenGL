@@ -1,8 +1,10 @@
 package com.ndmquan.gl.daynight.wallpaper
 
 import android.Manifest
+import android.app.WallpaperManager
+import android.content.ComponentName
+import android.content.Intent
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -10,7 +12,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
 import com.ndmquan.gl.daynight.wallpaper.core.DayNightRenderer
+import com.ndmquan.gl.daynight.wallpaper.core.DayNightWallpaperService
 import com.ndmquan.gl.daynight.wallpaper.databinding.ActivityMainBinding
+import kotlin.jvm.java
 
 class MainActivity : AppCompatActivity() {
 
@@ -40,6 +44,19 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    private fun setLiveWallpaper() {
+        val intent = Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER)
+        val component = ComponentName(applicationContext, DayNightWallpaperService::class.java)
+        intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, component)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+
     private fun hideSystemBar() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
             val controller = WindowInsetsControllerCompat(window, v)
@@ -52,7 +69,7 @@ class MainActivity : AppCompatActivity() {
 
     inner class SetWallpaperPermissionCallback : PermissionUtils.PermissionCallback {
         override fun onAllGranted(permission: List<String>) {
-            Toast.makeText(this@MainActivity, "Set wallpaper", Toast.LENGTH_SHORT).show()
+            setLiveWallpaper()
         }
 
         override fun onDenied(
