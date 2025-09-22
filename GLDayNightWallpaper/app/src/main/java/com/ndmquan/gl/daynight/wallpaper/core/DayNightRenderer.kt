@@ -20,7 +20,7 @@ class DayNightRenderer(
 ) : GLSurfaceView.Renderer {
 
     companion object {
-        const val DEFAULT_DAY_DURATION = 5 * 60_000L
+        const val DEFAULT_DAY_DURATION = 60_000L
 
         const val MIN_CLOUD_DURATION = 35_000L
         const val MAX_CLOUD_DURATION = 60_000L
@@ -164,17 +164,17 @@ class DayNightRenderer(
         layerDayTexture.animProgress = animDayProgress
         layerDayTexture.drawTexture(dayProgram)
 
-        foregroundNightTexture.animProgress = animDayProgress
-        foregroundNightTexture.drawTexture(dayProgram)
-
-        foregroundDayTexture.animProgress = animDayProgress
-        foregroundDayTexture.drawTexture(dayProgram)
-
         sunTexture.animProgress = animDayProgress
         sunTexture.drawTexture(dayProgram)
 
         moonTexture.animProgress = animDayProgress
         moonTexture.drawTexture(dayProgram)
+
+        foregroundNightTexture.animProgress = animDayProgress
+        foregroundNightTexture.drawTexture(dayProgram)
+
+        foregroundDayTexture.animProgress = animDayProgress
+        foregroundDayTexture.drawTexture(dayProgram)
 
         cloudTextures.forEachIndexed { index, it ->
             it.animProgress = animCloudProgress[index]
